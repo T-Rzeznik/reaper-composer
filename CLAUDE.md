@@ -22,6 +22,8 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
 - `skills/music-theory/` — lookup tables (MIDI notes, scales, chords, bar→seconds + swing math,
   GM drum map); the composer uses these instead of computing notes/timing inline
 - `skills/mixing/` — how to read the analyze tools and translate metrics into mix fixes
+- `skills/recommended-vsts/` — free VSTs by role; `vst-setup` suggests these (with an
+  install→rescan loop) when no suitable instrument is installed, instead of forcing a synth
 - `skills/reaper-mcp-reference/` — the reaper-mcp tool contract (load before any DAW call)
 - `skills/genre-{edm,house,trap,metal,rock-and-roll}/` — per-genre musicological context
 - `skills/genre-template/` — copy to add a new genre (not a real genre; agents ignore it)

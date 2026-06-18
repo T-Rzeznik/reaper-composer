@@ -64,6 +64,7 @@ adding a new genre never touches agent code.
 | `skills/vision-discovery/` | Conversational discovery for fuzzy / genre-less / hybrid ideas |
 | `skills/music-theory/` | Lookup tables: MIDI notes, scales, chords, timing/swing math, drum map |
 | `skills/mixing/` | How to read the analyze tools and translate metrics into mix fixes |
+| `skills/recommended-vsts/` | Catalog of free VSTs by role; suggested when you lack one |
 | `skills/reaper-mcp-reference/` | The reaper-mcp tool contract + hard-won conventions |
 | `skills/genre-*/` | Per-genre musicology (EDM, house, trap, metal, rock & roll) |
 | `skills/genre-template/` | Copy-to-create scaffold for new genres |
@@ -211,7 +212,9 @@ agents are written to work *with* these, not pretend they don't exist:
 - **FX are parameter-controlled** — no screenshot/vision; parameters are set by name/index,
   discovered at runtime.
 - **Plugins must be installed** — agents match the plan to whatever `reaper_list_installed_fx`
-  reports and substitute the closest available, reporting any swaps.
+  reports and substitute the closest available, reporting any swaps. When a role has no good
+  fit (e.g. no real drum sampler), `vst-setup` recommends specific **free** VSTs to install
+  (via the `recommended-vsts` skill) rather than forcing a wrong instrument onto it.
 - **Notes are written in batches** — a whole part goes in via one `reaper_add_midi_notes` call
   (a companion change to reaper-mcp), not one note at a time.
 - **Mixing has "ears"** — the analyze tools render the master and measure it (and can call an
@@ -234,6 +237,7 @@ skills/
   vision-discovery/      conversational discovery for fuzzy / hybrid ideas
   music-theory/          MIDI notes, scales, chords, timing/swing, drum map
   mixing/                reading the analyze tools → mix fixes
+  recommended-vsts/      free VSTs by role (drums, bass, synths, guitar, keys, FX)
   reaper-mcp-reference/  the reaper-mcp tool contract + conventions
   genre-template/        scaffold for new genres
   genre-edm · genre-house · genre-trap · genre-metal · genre-rock-and-roll

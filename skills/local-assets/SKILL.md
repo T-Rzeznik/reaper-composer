@@ -42,15 +42,17 @@ section_start_sec)`. Use the `music-theory` bar grid so the loop lands on the do
   user it may not line up, and prefer loops matching (or close to) the project BPM. Honest is
   better than silently-out-of-time.
 
-### Drum / instrument one-shots → sampler (preferred for drums)
-For programmable drums, route one-shots into a sampler so the composer can write patterns:
-1. Set up a sampler track (see `recommended-vsts` — **Sitala** is the easy pick) via `vst-setup`.
-2. **Important limitation:** the MCP can't load a file into a sampler's pads automatically
-   (there's no file-path parameter for that). So tell the user which one-shots to drag onto
-   which pads in the sampler, then the composer triggers them with MIDI (`add_midi_notes`)
-   using the genre's drum patterns.
-- If the user would rather not map a sampler, fall back to **dropping each one-shot as an audio
-  item** at its hit time with `reaper_insert_media` — simpler, but not pattern-editable.
+### Drum / instrument one-shots → drop on the timeline (default)
+By default, build the part by placing one-shots **directly as audio items at each hit**. Work
+out the pattern from the genre skill + the `music-theory` bar grid, then for every hit call
+`reaper_insert_media(track, oneshot_path, hit_sec)`. Put each drum voice (kick/snare/hat/perc)
+on its own track so it can be mixed and edited separately.
+
+**Only route into a sampler if the user explicitly asks for it** (e.g. they want to play/edit
+drums as MIDI). Then: set up a Sitala track (see `recommended-vsts`), tell them which one-shots
+to drag onto which pads — the MCP can't load files into a sampler's pads automatically (no
+file-path parameter) — and trigger with `add_midi_notes`. Don't default to this; it adds a
+manual mapping step the timeline approach avoids.
 
 ### One-off audio (risers, impacts, vocal chops, FX)
 Drop directly as audio items with `reaper_insert_media` at the exact moment they hit (e.g. a

@@ -12,7 +12,8 @@ Load three skills before composing: `reaper-mcp-reference` (tool contract + conv
 its tables, don't compute notes/timing from scratch), and the relevant genre skill (drum
 patterns, chord/melody conventions, production moves). **If the user pointed at a folder of
 their own samples/MIDI, also load `local-assets`** and weave those files into the sections
-(place loops/one-shots/MIDI with `reaper_insert_media`, trigger sampler one-shots with MIDI).
+(place loops/one-shots/MIDI on the timeline with `reaper_insert_media` by default; only trigger
+one-shots from a sampler via MIDI if the user asked for that).
 
 ## Setup
 1. `reaper_get_project_info` to confirm tempo. **Build the bar grid in seconds once:**

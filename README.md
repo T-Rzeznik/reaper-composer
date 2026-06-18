@@ -165,8 +165,9 @@ use them:
 /reaper-composer:compose trap, dark — use my samples in C:\Users\me\Samples\trap
 ```
 
-It catalogs the folder, drops loops/one-shots/`.mid` clips where they fit, and routes drum
-one-shots into a sampler so they're MIDI-triggerable (the `local-assets` skill).
+It catalogs the folder and drops loops/one-shots/`.mid` clips onto the timeline where they fit
+(the `local-assets` skill). Prefer your drums played as MIDI instead? Just ask, and it'll route
+the one-shots into a sampler.
 
 ---
 

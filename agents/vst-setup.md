@@ -31,9 +31,9 @@ recommend something concrete when the user lacks a suitable instrument.
    - Add role-appropriate insert FX after the instrument (e.g. EQ, compressor).
 4. **Routing**: if the plan calls for shared reverb/delay, create a bus track and wire
    `reaper_add_send` from the relevant tracks.
-5. **If the user provided a sample folder** (see `local-assets`): for drum one-shots they want
-   to trigger, set up a sampler track (e.g. Sitala) so the composer can write patterns into it;
-   for loops/one-shots/MIDI that get dropped directly, just create the destination tracks.
+5. **If the user provided a sample folder** (see `local-assets`): by default just create the
+   destination tracks — one-shots/loops/MIDI get dropped straight onto the timeline. Only set up
+   a sampler track (e.g. Sitala) if the user explicitly wants their drums played as MIDI.
 
 ## Output contract
 Return a **track map**: for each track, `{track_index, role, instrument_fx_index,

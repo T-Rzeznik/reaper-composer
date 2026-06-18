@@ -1,7 +1,7 @@
 {
   "name": "reaper-composer",
   "description": "Generates full songs in Reaper from a genre + style request, orchestrating an arranger, a VST-setup agent, and a composer that write MIDI, FX, and automation through the reaper-mcp server.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "author": {
     "name": "t-rzeznik"
   }

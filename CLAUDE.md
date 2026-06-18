@@ -25,7 +25,8 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
 - `skills/recommended-vsts/` — free VSTs by role; `vst-setup` suggests these (with an
   install→rescan loop) when no suitable instrument is installed, instead of forcing a synth
 - `skills/local-assets/` — use a user-pointed folder of samples/MIDI: scan + catalog, place
-  audio/`.mid` via `reaper_insert_media`, route drum one-shots into a sampler for MIDI triggering
+  audio/`.mid` on the timeline via `reaper_insert_media` (one-shots dropped directly by default;
+  sampler routing only if the user asks for MIDI-triggered drums)
 - `skills/reaper-mcp-reference/` — the reaper-mcp tool contract (load before any DAW call)
 - `skills/genre-{edm,house,trap,metal,rock-and-roll}/` — per-genre musicological context
 - `skills/genre-template/` — copy to add a new genre (not a real genre; agents ignore it)

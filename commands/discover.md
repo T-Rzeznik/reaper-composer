@@ -23,8 +23,8 @@ $ARGUMENTS
    - Confirm Reaper is reachable with `reaper_ping`; if it fails, tell them to load the
      reaper-mcp bridge ReaScript and stop here (the brief is saved in the conversation).
    - Hand the brief to the **arranger** → get plan approval → **vst-setup** → **composer**,
-     exactly as the `/reaper-composer:compose` command does. Do NOT render/export unless the
-     user explicitly asks afterward.
+     exactly as the `/reaper-composer:compose` command does. Do NOT render/export or auto-run a
+     mix pass; when the song is done, offer the optional mix step (`/reaper-composer:mix`).
 
 ## Rules
 - Discovery is the point of this command — don't shortcut to a genre guess. If the user

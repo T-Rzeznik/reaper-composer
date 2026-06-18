@@ -14,9 +14,14 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
   and skills are namespaced by plugin name once installed)
 - `commands/discover.md` — `/reaper-composer:discover`, the brainstorm entry point: runs the
   `vision-discovery` skill, then offers to continue into the same build pipeline
-- `agents/{arranger,vst-setup,composer}.md` — the three-stage pipeline
+- `commands/mix.md` — `/reaper-composer:mix`, an opt-in mix/balance pass (invokes `mix-engineer`)
+- `agents/{arranger,vst-setup,composer}.md` — the three-stage build pipeline;
+  `agents/mix-engineer.md` — opt-in mixing/balance (no compositional changes)
 - `skills/vision-discovery/` — conversational discovery the arranger runs FIRST when the
   request is vague/genre-less/hybrid; produces a creative brief + genre routing
+- `skills/music-theory/` — lookup tables (MIDI notes, scales, chords, bar→seconds + swing math,
+  GM drum map); the composer uses these instead of computing notes/timing inline
+- `skills/mixing/` — how to read the analyze tools and translate metrics into mix fixes
 - `skills/reaper-mcp-reference/` — the reaper-mcp tool contract (load before any DAW call)
 - `skills/genre-{edm,house,trap,metal,rock-and-roll}/` — per-genre musicological context
 - `skills/genre-template/` — copy to add a new genre (not a real genre; agents ignore it)
@@ -32,8 +37,8 @@ never branch genre logic into agent files (see principle below).
 ## What This Plugin Does
 
 Generates full songs in [Reaper](https://www.reaper.fm/) (a DAW) from a natural-language
-request (genre + style/artist reference). The plugin orchestrates three specialized agents
-that drive Reaper through the Reaper MCP server.
+request (genre + style/artist reference). The plugin orchestrates a three-agent build pipeline
+plus an opt-in mix stage that drive Reaper through the Reaper MCP server.
 
 ## Critical External Dependency: the `reaper-mcp` server
 
@@ -46,7 +51,7 @@ How it works: `Claude Code ──stdio/MCP──▶ reaper-mcp server ──TCP 
 ReaScript inside Reaper`. The bridge must be re-loaded from Reaper's action list every time
 Reaper restarts. Every MCP call is one Reaper undo step.
 
-### Tool surface (~53 tools, all `reaper_`-prefixed)
+### Tool surface (~54 tools, all `reaper_`-prefixed)
 
 - **Session/discovery:** `ping`, `get_project_info`, `list_installed_fx`, `analyze_project`,
   `analyze_mix`. Read tools take a `response_format` arg (`markdown` | `json`).
@@ -57,7 +62,8 @@ Reaper restarts. Every MCP call is one Reaper undo step.
 - **Automation:** `add_envelope_point` (targets: volume / pan / fx_param), `clear_envelope`,
   `set_track_automation_mode` — a track must be in `read` mode for written envelopes to play back.
 - **MIDI/items:** `insert_midi_item(track, start_sec, end_sec)` → then
-  `add_midi_note(track, item_index, pitch 0-127, start_sec, length_sec, velocity, channel)`;
+  `add_midi_notes(track, item_index, notes:[{pitch,start_sec,length_sec,velocity?,channel?}])`
+  to write a whole part in one call (preferred); `add_midi_note(...)` for a single note;
   `list_items`, `delete_item`.
 - **Transport/timeline:** `transport_play/stop/record/pause`, `set_cursor`, `set_tempo`,
   `set_time_selection`, `set_loop_enabled`, record arm/input.
@@ -82,27 +88,33 @@ control, sample-vs-MIDI choices); the real server supports none of that, so keep
 
 ## Architecture
 
-A pipeline of three agents, with genre knowledge factored out into reusable skills. Two
-commands enter the pipeline: `/reaper-composer:compose` (clear genre + style) and
-`/reaper-composer:discover` (a vibe with no genre — runs the `vision-discovery` skill first to
-produce a creative brief, which the arranger also triggers automatically for fuzzy requests).
+A three-agent build pipeline plus an opt-in mix stage, with genre knowledge factored out into
+reusable skills. Two commands enter the pipeline: `/reaper-composer:compose` (clear genre +
+style) and `/reaper-composer:discover` (a vibe with no genre — runs the `vision-discovery`
+skill first to produce a creative brief, which the arranger also triggers automatically for
+fuzzy requests). `/reaper-composer:mix` runs the mix stage separately.
 
 1. **Research & Arrangement Agent** (`arranger`) — turns genre + style (or a discovered brief)
    into a section-by-section song plan (intro/verse/chorus/breakdown/drop, tempo, key,
    per-section instrumentation + energy). User approves or iterates before anything is built.
 2. **VST Selection & Setup Agent** — picks instruments/effects for the genre and loads them
    into Reaper's track structure via MCP.
-3. **Composition Agent** — writes MIDI (`insert_midi_item` → `add_midi_note`, in seconds),
-   automation envelopes, and FX control via MCP. Drives plugins through their **named/indexed
-   parameters** (`list_fx_params` → `set_fx_param`) — there is no UI vision; see constraints
-   below. Streams progress updates to the user.
+3. **Composition Agent** — writes MIDI (`insert_midi_item` → batch `add_midi_notes`, in
+   seconds; computes notes/timing from the `music-theory` skill's tables), automation
+   envelopes, and FX control via MCP. Drives plugins through their **named/indexed parameters**
+   (`list_fx_params` → `set_fx_param`) — there is no UI vision; see constraints below. Streams
+   progress updates to the user.
 
-Agents run in sequence or parallel depending on dependencies, and communicate to refine
-details (e.g. the VST agent confirms compatibility with the composition agent).
+Plus, **opt-in only** (never automatic — it renders a temp file to analyze):
+4. **Mix Engineer** (`mix-engineer`) — runs the analyze→fix→re-analyze loop via
+   `analyze_project`, balancing levels/EQ/pan/sends. Makes no compositional changes.
+
+The build agents run in sequence and communicate to refine details (e.g. the VST agent confirms
+compatibility with the composition agent).
 
 ### Design Principle: agents are general, genres are skills
 
-Keep the three agents genre-agnostic. **All genre-specific knowledge lives in skills** — one
+Keep the agents genre-agnostic. **All genre-specific knowledge lives in skills** — one
 skill per genre (EDM, metal, etc.) holding drum patterns, tempo ranges, song structures, VST
 archetypes, harmonic/melodic conventions, and production techniques. Agents pull the relevant
 skill for musicological context and ask clarifying questions within it ("hard drop or

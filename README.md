@@ -8,7 +8,7 @@ project — tracks created, instruments and effects loaded, MIDI written, and au
 section by section, with you approving the creative direction along the way.
 
 It drives the DAW through a companion MCP server,
-**[reaper-mcp](https://github.com/t-rzeznik/reaper-mcp)**, which exposes ~53 tools for
+**[reaper-mcp](https://github.com/t-rzeznik/reaper-mcp)**, which exposes ~54 tools for
 controlling Reaper. This repo is the "brain" (musical knowledge + orchestration); reaper-mcp
 is the "hands" (DAW control). **You need both.**
 
@@ -29,10 +29,14 @@ You:  /reaper-composer:compose deep house, late-night rooftop vibe, ~124 BPM
                    streaming progress, and auditions the result
 
   → A finished, playable Reaper project. (Export to audio only if you ask.)
+
+  ④ Mix (opt-in) → /reaper-composer:mix — analyzes the master (loudness, headroom,
+                   tonal balance, stereo) and applies level/EQ/pan/send fixes
 ```
 
-You stay in control: the arranger pauses for your sign-off before anything touches Reaper, and
-nothing is rendered/bounced to a file unless you explicitly ask.
+You stay in control: the arranger pauses for your sign-off before anything touches Reaper,
+nothing is rendered/bounced to a file unless you explicitly ask, and the mix pass only runs
+when you invoke it.
 
 **Don't have a genre in mind?** Start with `/reaper-composer:discover` instead — just describe
 the *feeling* ("something dreamy but with a hard-hitting drop", a movie scene, two artists you
@@ -44,17 +48,22 @@ falls back to this automatically when a request comes in fuzzy.)
 
 ## 🏗️ How it's built
 
-Three focused sub-agents in a pipeline, with all genre knowledge factored out into reusable
-**skills** — so the agents stay genre-agnostic and adding a new genre never touches agent code.
+Focused sub-agents in a pipeline (three for composing, plus an opt-in mix engineer), with all
+genre knowledge factored out into reusable **skills** — so the agents stay genre-agnostic and
+adding a new genre never touches agent code.
 
 | Piece | Role |
 |---|---|
 | `commands/compose.md` | `/reaper-composer:compose` — the orchestrator that runs the pipeline |
 | `commands/discover.md` | `/reaper-composer:discover` — brainstorm a vibe into a brief, then build |
+| `commands/mix.md` | `/reaper-composer:mix` — opt-in mix/balance pass on the current project |
 | `agents/arranger.md` | Turns intent into an approved song plan (no DAW access) |
 | `agents/vst-setup.md` | Builds the Reaper session: tracks, instruments, FX, routing |
 | `agents/composer.md` | Writes all MIDI, FX, and automation; auditions the song |
+| `agents/mix-engineer.md` | Analyzes the master and balances levels/EQ/pan/sends (opt-in) |
 | `skills/vision-discovery/` | Conversational discovery for fuzzy / genre-less / hybrid ideas |
+| `skills/music-theory/` | Lookup tables: MIDI notes, scales, chords, timing/swing math, drum map |
+| `skills/mixing/` | How to read the analyze tools and translate metrics into mix fixes |
 | `skills/reaper-mcp-reference/` | The reaper-mcp tool contract + hard-won conventions |
 | `skills/genre-*/` | Per-genre musicology (EDM, house, trap, metal, rock & roll) |
 | `skills/genre-template/` | Copy-to-create scaffold for new genres |
@@ -136,6 +145,17 @@ finished project open for you to play and edit.
 
 This opens a conversation that shapes your idea into a concrete brief, then offers to build it.
 
+**Polish the mix (optional):**
+
+```bash
+/reaper-composer:mix                       # balance the current project
+/reaper-composer:mix too boomy, push the lead
+```
+
+Analyzes the master (loudness, headroom, tonal balance, stereo) and applies level/EQ/pan/send
+fixes. It renders a temp file for analysis only — never an export — and falls back to plain DSP
+metrics if the optional AI-listening layer isn't configured.
+
 ---
 
 ## 🎵 Supported genres & skills
@@ -168,7 +188,7 @@ The agents pick it up automatically.
 ```
 ┌─────────────────────┐     orchestrates      ┌──────────────────────┐   MCP / TCP   ┌──────────┐
 │   reaper-composer    │ ───── agents + ─────▶ │     reaper-mcp        │ ───────────▶ │  Reaper  │
-│   (this repo)        │       skills          │   (companion repo)    │   ~53 tools   │   (DAW)  │
+│   (this repo)        │       skills          │   (companion repo)    │   ~54 tools   │   (DAW)  │
 │   musical brain      │ ◀──── tool calls ──── │   DAW control layer   │ ◀─────────── │          │
 └─────────────────────┘                       └──────────────────────┘               └──────────┘
 ```
@@ -186,11 +206,16 @@ The plugin's behavior is shaped by what the reaper-mcp tool surface actually sup
 agents are written to work *with* these, not pretend they don't exist:
 
 - **MIDI-only** — songs are built from instrument plugins; there's no audio/sample import.
-- **Time is in seconds** — the composer converts bars/beats using the project tempo itself.
+- **Time is in seconds** — the composer converts bars/beats using the project tempo itself
+  (the `music-theory` skill carries the exact formulas and note/chord tables).
 - **FX are parameter-controlled** — no screenshot/vision; parameters are set by name/index,
   discovered at runtime.
 - **Plugins must be installed** — agents match the plan to whatever `reaper_list_installed_fx`
   reports and substitute the closest available, reporting any swaps.
+- **Notes are written in batches** — a whole part goes in via one `reaper_add_midi_notes` call
+  (a companion change to reaper-mcp), not one note at a time.
+- **Mixing has "ears"** — the analyze tools render the master and measure it (and can call an
+  AI listener), which is how the mix engineer reasons about a result it can't literally hear.
 
 ---
 
@@ -203,9 +228,12 @@ agents are written to work *with* these, not pretend they don't exist:
 commands/
   compose.md             /reaper-composer:compose — genre + style → song
   discover.md            /reaper-composer:discover — brainstorm a vibe → song
-agents/                  arranger · vst-setup · composer
+  mix.md                 /reaper-composer:mix — opt-in mix/balance pass
+agents/                  arranger · vst-setup · composer · mix-engineer
 skills/
   vision-discovery/      conversational discovery for fuzzy / hybrid ideas
+  music-theory/          MIDI notes, scales, chords, timing/swing, drum map
+  mixing/                reading the analyze tools → mix fixes
   reaper-mcp-reference/  the reaper-mcp tool contract + conventions
   genre-template/        scaffold for new genres
   genre-edm · genre-house · genre-trap · genre-metal · genre-rock-and-roll

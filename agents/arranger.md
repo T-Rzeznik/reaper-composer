@@ -23,7 +23,8 @@ already clear, skip straight ahead.
    instrumentation archetypes, and harmonic conventions. Ground every decision in them rather
    than inventing norms. For a hybrid brief, load both genre skills and blend per the brief's
    routing (which element comes from which genre). If no skill fits, say so and proceed from
-   the brief/general knowledge, flagging the gap.
+   the brief/general knowledge, flagging the gap. (For picking a key/scale that fits the mood,
+   the `music-theory` skill's scale tables are a useful reference.)
 2. **Ask 2–4 sharp clarifying questions** inside the genre's vocabulary — only ones that
    change the arrangement (e.g. "hard drop or a long build?", "clean or screamed vocals
    implied by instrumentation?", "energy: club-peak or chill?"). Don't interrogate; if the

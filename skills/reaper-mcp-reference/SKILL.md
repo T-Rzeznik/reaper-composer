@@ -24,7 +24,8 @@ this list does.
 - **Time is in SECONDS, not bars/beats.** MIDI notes, item bounds, envelope points,
   markers, and the cursor are all positioned in seconds. Convert musical time yourself:
   `seconds_per_beat = 60 / bpm`; a bar in 4/4 = `4 * 60 / bpm` seconds. Compute the
-  project's bar grid up front and reuse it.
+  project's bar grid up front and reuse it. (The `music-theory` skill has the full
+  bar/beat→seconds and swing/triplet formulas.)
 - **Envelopes only play back in `read` mode.** After writing automation to a track,
   call `reaper_set_track_automation_mode(track_index, "read")` or it will look like
   nothing happened.
@@ -40,7 +41,7 @@ this list does.
   `reaper_run_action` with a Reaper command ID.
 - **One MCP call = one undo step.** Safe to iterate; the user can Ctrl+Z any single action.
 
-## Tool surface (~53 tools, all `reaper_`-prefixed)
+## Tool surface (~54 tools, all `reaper_`-prefixed)
 
 **Session / discovery** — `ping`, `get_project_info`, `list_installed_fx`,
 `analyze_project`, `analyze_mix`. Read tools accept `response_format` = `markdown` | `json`
@@ -60,9 +61,11 @@ param="", shape=linear, value_is_db=False)` where `target` ∈ volume | pan | fx
 (fx_param requires `fx_index` + `param`); `clear_envelope`; `set_track_automation_mode`.
 
 **MIDI / items** — `insert_midi_item(track_index, start_sec, end_sec)` returns
-`{item_index, ...}`, then `add_midi_note(track_index, item_index, pitch 0-127,
-start_sec, length_sec, velocity 1-127, channel 0-15)`. Also `list_items`, `delete_item`
-(later item indices shift down by one after a delete).
+`{item_index, ...}`. Then write notes with **`add_midi_notes(track_index, item_index, notes)`**
+— `notes` is a list of `{pitch 0-127, start_sec, length_sec, velocity? 1-127, channel? 0-15}` —
+which inserts the whole part in one call and is the preferred path. `add_midi_note(...)` writes
+a single note (use only for one-off edits). Also `list_items`, `delete_item` (later item
+indices shift down by one after a delete).
 
 **Transport / timeline** — `transport_play`, `transport_stop`, `transport_record`,
 `transport_pause`, `set_cursor`, `set_tempo`, `set_time_selection`,
@@ -82,14 +85,18 @@ start_sec, length_sec, velocity 1-127, channel 0-15)`. Also `list_items`, `delet
 `list_fx_params` → `set_fx_param` for the starting sound → optional FX (EQ, comp) added after.
 
 **Write a MIDI part:** compute the bar grid in seconds → `insert_midi_item` spanning the
-section → loop `add_midi_note` for each note. Keep one item per section per track so it's
-easy to delete/redo a section.
+section → assemble the section's notes as a list and write them in one `add_midi_notes` call.
+Keep one item per section per track so it's easy to delete/redo a section.
 
 **Section markers:** after laying out the arrangement, `add_marker` at each section's
 start second (intro/verse/drop/…) so the user can navigate the timeline.
 
-**Mix pass:** `analyze_mix` to read levels → adjust with `set_track_volume_db` /
-`set_track_pan`, bus reverb/delay via `add_send`.
+**Mix pass:** `analyze_project` *renders the master mix to a temp file and measures it*
+(LUFS, true peak, clipping, per-band balance, stereo width; optional Gemini listening
+feedback) — it does NOT report per-track levels. `analyze_mix` does the same for an
+already-rendered file. Read the result, then adjust with `set_track_volume_db` /
+`set_track_pan` / `set_fx_param` / `add_send`. See the `mixing` skill for how to interpret
+the metrics and the deps it needs; this is an opt-in step, not part of composing.
 
 **Automation (e.g. a filter sweep on a build):** `set_track_automation_mode(idx,"read")`
 → `add_envelope_point` with `target="fx_param"`, the filter cutoff `param`, several points

@@ -26,8 +26,10 @@ Then drive these agents in order, passing each stage's output to the next:
 2. **vst-setup** — once the plan is approved, build the Reaper track structure (tracks,
    instruments, effects, routing). Collect the track map it returns.
 3. **composer** — write all MIDI, FX, and automation section by section, streaming progress.
-   Audition the result. **Do NOT render/export** — leave the finished song in the Reaper
-   project. Render only if the user explicitly asks for an audio file afterward.
+   Audition the result. **Do NOT render/export, and do NOT auto-run a mix pass** — leave the
+   finished song in the Reaper project. When done, offer the optional mix step (the user can
+   say "mix it" or run `/reaper-composer:mix` to invoke the **mix-engineer**). Render only if
+   the user explicitly asks for an audio file afterward.
 
 ## Rules
 - Do not skip the approval gate after the arranger — the user owns the creative direction.

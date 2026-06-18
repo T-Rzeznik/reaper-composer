@@ -32,10 +32,15 @@ Then drive these agents in order, passing each stage's output to the next:
    the user explicitly asks for an audio file afterward.
 
 ## Rules
+- **Sample/MIDI folder:** if the request includes (or the user mentions) a path to a folder of
+  their own samples or MIDI, load the `local-assets` skill — `vst-setup` and the `composer` will
+  catalog it and weave those files into the song (`reaper_insert_media` for audio/MIDI, sampler
+  routing for drum one-shots).
 - Do not skip the approval gate after the arranger — the user owns the creative direction.
 - Pass the full arrangement plan AND the track map forward; downstream agents depend on
   `track_index` / `fx_index` values.
 - Keep the user in the loop: announce each stage and surface any plugin substitutions or
-  missing-capability issues (e.g. a requested sample, since the server is MIDI-only).
+  missing-capability issues (e.g. the server can't record/synthesize audio — though it can
+  import the user's own samples/MIDI files via `local-assets`).
 - Stay decisive within each stage — make musical choices grounded in the genre skill rather
   than asking the user to specify everything.

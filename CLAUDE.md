@@ -24,6 +24,8 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
 - `skills/mixing/` — how to read the analyze tools and translate metrics into mix fixes
 - `skills/recommended-vsts/` — free VSTs by role; `vst-setup` suggests these (with an
   install→rescan loop) when no suitable instrument is installed, instead of forcing a synth
+- `skills/local-assets/` — use a user-pointed folder of samples/MIDI: scan + catalog, place
+  audio/`.mid` via `reaper_insert_media`, route drum one-shots into a sampler for MIDI triggering
 - `skills/reaper-mcp-reference/` — the reaper-mcp tool contract (load before any DAW call)
 - `skills/genre-{edm,house,trap,metal,rock-and-roll}/` — per-genre musicological context
 - `skills/genre-template/` — copy to add a new genre (not a real genre; agents ignore it)
@@ -53,7 +55,7 @@ How it works: `Claude Code ──stdio/MCP──▶ reaper-mcp server ──TCP 
 ReaScript inside Reaper`. The bridge must be re-loaded from Reaper's action list every time
 Reaper restarts. Every MCP call is one Reaper undo step.
 
-### Tool surface (~54 tools, all `reaper_`-prefixed)
+### Tool surface (~55 tools, all `reaper_`-prefixed)
 
 - **Session/discovery:** `ping`, `get_project_info`, `list_installed_fx`, `analyze_project`,
   `analyze_mix`. Read tools take a `response_format` arg (`markdown` | `json`).
@@ -66,6 +68,7 @@ Reaper restarts. Every MCP call is one Reaper undo step.
 - **MIDI/items:** `insert_midi_item(track, start_sec, end_sec)` → then
   `add_midi_notes(track, item_index, notes:[{pitch,start_sec,length_sec,velocity?,channel?}])`
   to write a whole part in one call (preferred); `add_midi_note(...)` for a single note;
+  `insert_media(track, file_path, start_sec)` imports an audio or `.mid` file from disk;
   `list_items`, `delete_item`.
 - **Transport/timeline:** `transport_play/stop/record/pause`, `set_cursor`, `set_tempo`,
   `set_time_selection`, `set_loop_enabled`, record arm/input.
@@ -85,8 +88,9 @@ control, sample-vs-MIDI choices); the real server supports none of that, so keep
    parameters: `list_fx_params` → `set_fx_param`.
 2. **MIDI and automation are time-based (seconds), not bars/beats.** The composer converts
    musical time → seconds itself using the project tempo.
-3. **No sample/audio-import tool — MIDI only.** The arrangement is all instrument plugins;
-   there are no sample-vs-MIDI decisions (closest escape hatch is `run_action`).
+3. **Created sounds are MIDI; the server can't record/synthesize audio.** New parts are MIDI
+   driving instrument plugins. It *can* import existing files, though — `reaper_insert_media`
+   drops the user's own audio samples/loops or `.mid` clips onto a track (see `local-assets`).
 
 ## Architecture
 

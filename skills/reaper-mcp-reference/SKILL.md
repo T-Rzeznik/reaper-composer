@@ -36,12 +36,14 @@ this list does.
 - **FX parameters are set by name or index — there is NO screenshot/vision.** Always
   `reaper_list_fx_params` first to discover real parameter names/ranges, then
   `reaper_set_fx_param`. Never assume a parameter exists.
-- **No audio/sample import.** This server writes MIDI only. There is no tool to drop
-  a `.wav` onto a track. If a sample is unavoidable, the only escape hatch is
-  `reaper_run_action` with a Reaper command ID.
+- **Can't record or synthesize audio, but CAN import files.** The server doesn't capture
+  live audio. It *can* drop an existing audio file or a `.mid` file onto a track with
+  `reaper_insert_media(track_index, file_path, start_sec)` — use this for the user's own
+  samples/loops/MIDI (see the `local-assets` skill). Sounds you create from scratch are still
+  MIDI driving instrument plugins.
 - **One MCP call = one undo step.** Safe to iterate; the user can Ctrl+Z any single action.
 
-## Tool surface (~54 tools, all `reaper_`-prefixed)
+## Tool surface (~55 tools, all `reaper_`-prefixed)
 
 **Session / discovery** — `ping`, `get_project_info`, `list_installed_fx`,
 `analyze_project`, `analyze_mix`. Read tools accept `response_format` = `markdown` | `json`
@@ -64,8 +66,9 @@ param="", shape=linear, value_is_db=False)` where `target` ∈ volume | pan | fx
 `{item_index, ...}`. Then write notes with **`add_midi_notes(track_index, item_index, notes)`**
 — `notes` is a list of `{pitch 0-127, start_sec, length_sec, velocity? 1-127, channel? 0-15}` —
 which inserts the whole part in one call and is the preferred path. `add_midi_note(...)` writes
-a single note (use only for one-off edits). Also `list_items`, `delete_item` (later item
-indices shift down by one after a delete).
+a single note (use only for one-off edits). `insert_media(track_index, file_path, start_sec)`
+imports an existing audio or `.mid` file onto a track (samples/loops/MIDI from disk). Also
+`list_items`, `delete_item` (later item indices shift down by one after a delete).
 
 **Transport / timeline** — `transport_play`, `transport_stop`, `transport_record`,
 `transport_pause`, `set_cursor`, `set_tempo`, `set_time_selection`,

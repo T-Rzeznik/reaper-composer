@@ -8,7 +8,7 @@ project — tracks created, instruments and effects loaded, MIDI written, and au
 section by section, with you approving the creative direction along the way.
 
 It drives the DAW through a companion MCP server,
-**[reaper-mcp](https://github.com/t-rzeznik/reaper-mcp)**, which exposes ~54 tools for
+**[reaper-mcp](https://github.com/t-rzeznik/reaper-mcp)**, which exposes ~55 tools for
 controlling Reaper. This repo is the "brain" (musical knowledge + orchestration); reaper-mcp
 is the "hands" (DAW control). **You need both.**
 
@@ -65,6 +65,7 @@ adding a new genre never touches agent code.
 | `skills/music-theory/` | Lookup tables: MIDI notes, scales, chords, timing/swing math, drum map |
 | `skills/mixing/` | How to read the analyze tools and translate metrics into mix fixes |
 | `skills/recommended-vsts/` | Catalog of free VSTs by role; suggested when you lack one |
+| `skills/local-assets/` | Use your own folder of samples/MIDI — catalog, place, and trigger them |
 | `skills/reaper-mcp-reference/` | The reaper-mcp tool contract + hard-won conventions |
 | `skills/genre-*/` | Per-genre musicology (EDM, house, trap, metal, rock & roll) |
 | `skills/genre-template/` | Copy-to-create scaffold for new genres |
@@ -157,6 +158,16 @@ Analyzes the master (loudness, headroom, tonal balance, stereo) and applies leve
 fixes. It renders a temp file for analysis only — never an export — and falls back to plain DSP
 metrics if the optional AI-listening layer isn't configured.
 
+**Bring your own sounds:** point any compose request at a folder of samples or MIDI and it'll
+use them:
+
+```bash
+/reaper-composer:compose trap, dark — use my samples in C:\Users\me\Samples\trap
+```
+
+It catalogs the folder, drops loops/one-shots/`.mid` clips where they fit, and routes drum
+one-shots into a sampler so they're MIDI-triggerable (the `local-assets` skill).
+
 ---
 
 ## 🎵 Supported genres & skills
@@ -189,7 +200,7 @@ The agents pick it up automatically.
 ```
 ┌─────────────────────┐     orchestrates      ┌──────────────────────┐   MCP / TCP   ┌──────────┐
 │   reaper-composer    │ ───── agents + ─────▶ │     reaper-mcp        │ ───────────▶ │  Reaper  │
-│   (this repo)        │       skills          │   (companion repo)    │   ~54 tools   │   (DAW)  │
+│   (this repo)        │       skills          │   (companion repo)    │   ~55 tools   │   (DAW)  │
 │   musical brain      │ ◀──── tool calls ──── │   DAW control layer   │ ◀─────────── │          │
 └─────────────────────┘                       └──────────────────────┘               └──────────┘
 ```
@@ -206,7 +217,10 @@ The agents pick it up automatically.
 The plugin's behavior is shaped by what the reaper-mcp tool surface actually supports — the
 agents are written to work *with* these, not pretend they don't exist:
 
-- **MIDI-only** — songs are built from instrument plugins; there's no audio/sample import.
+- **Sounds are created as MIDI** — new parts are MIDI driving instrument plugins (the server
+  can't record or synthesize audio). But it **can import your own files** — point it at a folder
+  and it drops samples/loops and `.mid` clips in via `reaper_insert_media` (the `local-assets`
+  skill).
 - **Time is in seconds** — the composer converts bars/beats using the project tempo itself
   (the `music-theory` skill carries the exact formulas and note/chord tables).
 - **FX are parameter-controlled** — no screenshot/vision; parameters are set by name/index,
@@ -238,6 +252,7 @@ skills/
   music-theory/          MIDI notes, scales, chords, timing/swing, drum map
   mixing/                reading the analyze tools → mix fixes
   recommended-vsts/      free VSTs by role (drums, bass, synths, guitar, keys, FX)
+  local-assets/          use a folder of your own samples / MIDI
   reaper-mcp-reference/  the reaper-mcp tool contract + conventions
   genre-template/        scaffold for new genres
   genre-edm · genre-house · genre-trap · genre-metal · genre-rock-and-roll

@@ -1,5 +1,5 @@
 ---
-description: Mix and balance the current Reaper project — analyze the master (loudness, headroom, tonal balance, stereo) and apply level/EQ/pan/send fixes. Opt-in; renders a temp file for analysis only.
+description: (Optional) Mix and balance the current Reaper project — analyze the master (loudness, headroom, tonal balance, stereo) and apply level/EQ/pan/send fixes. /reaper-composer:compose offers this at the end, so this is just a way to run it again on demand. Renders a temp file for analysis only.
 ---
 
 You are running the **reaper-composer** mix pass. Any focus the user gave (e.g. "the vocal's

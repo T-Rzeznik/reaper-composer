@@ -16,6 +16,11 @@ is the "hands" (DAW control). **You need both.**
 
 ## ✨ What it does
 
+**One command does the whole thing.** Run `/reaper-composer:compose` and it carries you from a
+plain-English request to a finished song — brainstorming the idea if it's fuzzy, building the
+session, writing the music, and offering a mix at the end. You never pick "skills" or chain
+commands; the right knowledge loads itself as each stage needs it.
+
 ```
 You:  /reaper-composer:compose deep house, late-night rooftop vibe, ~124 BPM
 
@@ -38,25 +43,44 @@ You stay in control: the arranger pauses for your sign-off before anything touch
 nothing is rendered/bounced to a file unless you explicitly ask, and the mix pass only runs
 when you invoke it.
 
-**Don't have a genre in mind?** Start with `/reaper-composer:discover` instead — just describe
-the *feeling* ("something dreamy but with a hard-hitting drop", a movie scene, two artists you
-want to blend). It conversates with you, translating vague language into musical decisions and
-even blending genres, until your idea is concrete — then offers to build it. (`compose` also
-falls back to this automatically when a request comes in fuzzy.)
+**It remembers, too.** The plugin builds a persistent catalog of *your* installed VSTs (what
+each one is and what it's good for) so it picks better instruments over time, and it checkpoints
+each song to disk — so after a `/clear` or the next day, re-running `compose` offers to **resume**
+the in-progress song right where it left off instead of starting over.
+
+**Don't have a genre in mind?** Still just run `/reaper-composer:compose` — describe the
+*feeling* ("something dreamy but with a hard-hitting drop", a movie scene, two artists you want
+to blend) and it automatically drops into a back-and-forth that turns the vibe into a concrete
+brief before building. (There's also a dedicated `/reaper-composer:discover` if you specifically
+want to brainstorm without committing to a build yet — but you don't need it.)
 
 ---
 
 ## 🏗️ How it's built
 
-Focused sub-agents in a pipeline (three for composing, plus an opt-in mix engineer), with all
-genre knowledge factored out into reusable **skills** — so the agents stay genre-agnostic and
-adding a new genre never touches agent code.
+You drive **one command**; behind it, focused sub-agents run in a pipeline (three for composing,
+plus an opt-in mix engineer), and all the musical knowledge lives in **skills** that load
+themselves on demand. You never invoke a skill or chain agents by hand.
+
+**The command you use:**
+
+| Command | Role |
+|---|---|
+| `/reaper-composer:compose` (`commands/compose.md`) | **The one command.** Orchestrates the whole pipeline — auto-brainstorms fuzzy ideas, builds the session, writes the music, offers a mix at the end. |
+
+**Optional shortcuts** — `compose` already covers all of these; reach for them only if you want
+to run a piece on its own:
+
+| Command | When you'd use it directly |
+|---|---|
+| `/reaper-composer:discover` (`commands/discover.md`) | Brainstorm a vibe into a brief *without* committing to a build yet. |
+| `/reaper-composer:mix` (`commands/mix.md`) | Re-run the mix/balance pass on demand. |
+| `/reaper-composer:catalog-vsts` (`commands/catalog-vsts.md`) | Eagerly research every installed plugin up front. |
+
+**Under the hood** — agents and skills the plugin runs *for* you (you never call these directly):
 
 | Piece | Role |
 |---|---|
-| `commands/compose.md` | `/reaper-composer:compose` — the orchestrator that runs the pipeline |
-| `commands/discover.md` | `/reaper-composer:discover` — brainstorm a vibe into a brief, then build |
-| `commands/mix.md` | `/reaper-composer:mix` — opt-in mix/balance pass on the current project |
 | `agents/arranger.md` | Turns intent into an approved song plan (no DAW access) |
 | `agents/vst-setup.md` | Builds the Reaper session: tracks, instruments, FX, routing |
 | `agents/composer.md` | Writes all MIDI, FX, and automation; auditions the song |
@@ -65,6 +89,8 @@ adding a new genre never touches agent code.
 | `skills/music-theory/` | Lookup tables: MIDI notes, scales, chords, timing/swing math, drum map |
 | `skills/mixing/` | How to read the analyze tools and translate metrics into mix fixes |
 | `skills/recommended-vsts/` | Catalog of free VSTs by role; suggested when you lack one |
+| `skills/vst-catalog/` | Persistent, researched catalog of *your* installed VSTs — drives plugin selection |
+| `skills/song-state/` | Checkpoints each song to disk so a later session can resume it |
 | `skills/local-assets/` | Use your own folder of samples/MIDI — catalog, place, and trigger them |
 | `skills/reaper-mcp-reference/` | The reaper-mcp tool contract + hard-won conventions |
 | `skills/genre-*/` | Per-genre musicology (EDM, house, trap, metal, rock & roll) |
@@ -72,7 +98,8 @@ adding a new genre never touches agent code.
 
 **Design principle:** agents are general; genres are data. Every genre skill is just Markdown —
 tempo/structure tables, drum patterns, synth archetypes, harmony, and signature production moves —
-so the system grows by writing knowledge, not code.
+so the system grows by writing knowledge, not code. And because skills load only when a stage
+needs them, the long list above costs you nothing — you only ever type `compose`.
 
 ---
 
@@ -102,8 +129,8 @@ In Claude Code:
 /plugin install reaper-composer@reaper-composer
 ```
 
-That's it — the `/reaper-composer:compose` and `/reaper-composer:discover` commands and all
-skills are now available.
+That's it — `/reaper-composer:compose` is now available (along with the optional shortcut
+commands and all the skills it loads automatically).
 
 **Developing locally instead?** Point Claude Code straight at a clone:
 
@@ -137,37 +164,27 @@ Then: review the plan the arranger proposes → approve or ask for tweaks → wa
 song in Reaper. Want a file at the end? Say *"render it to WAV"* — otherwise it leaves the
 finished project open for you to play and edit.
 
-**Or start from a vibe, not a genre:**
+The **same command** handles everything else, too — you don't switch commands:
+
+- **No genre in mind?** Just describe the feeling and it auto-brainstorms a brief first:
+  `/reaper-composer:compose something cinematic and tense that erupts into a heavy drop`
+- **Bring your own sounds?** Point it at a folder of samples or MIDI and it weaves them in:
+  `/reaper-composer:compose trap, dark — use my samples in C:\Users\me\Samples\trap`
+  (it catalogs the folder and drops loops/one-shots/`.mid` clips where they fit; ask and it'll
+  route drum one-shots into a sampler for MIDI triggering instead)
+- **Mix at the end?** When the song's done it *asks* if you want it balanced — just say yes.
+- **Plugins?** It researches and remembers your VSTs automatically as songs need them.
+
+### Optional shortcuts
+
+Everything above runs from `compose`. These exist only if you want to trigger one piece on its
+own — you never *need* them:
 
 ```bash
-/reaper-composer:discover something cinematic and tense that erupts into a heavy drop
-/reaper-composer:discover the energy of Daft Punk but moody, like a night drive
-/reaper-composer:discover                # no idea yet? just run it and start talking
+/reaper-composer:discover the energy of Daft Punk but moody, like a night drive   # brainstorm only, no build yet
+/reaper-composer:mix too boomy, push the lead                                      # re-run the mix pass on demand
+/reaper-composer:catalog-vsts                                                      # eagerly research every installed plugin up front
 ```
-
-This opens a conversation that shapes your idea into a concrete brief, then offers to build it.
-
-**Polish the mix (optional):**
-
-```bash
-/reaper-composer:mix                       # balance the current project
-/reaper-composer:mix too boomy, push the lead
-```
-
-Analyzes the master (loudness, headroom, tonal balance, stereo) and applies level/EQ/pan/send
-fixes. It renders a temp file for analysis only — never an export — and falls back to plain DSP
-metrics if the optional AI-listening layer isn't configured.
-
-**Bring your own sounds:** point any compose request at a folder of samples or MIDI and it'll
-use them:
-
-```bash
-/reaper-composer:compose trap, dark — use my samples in C:\Users\me\Samples\trap
-```
-
-It catalogs the folder and drops loops/one-shots/`.mid` clips onto the timeline where they fit
-(the `local-assets` skill). Prefer your drums played as MIDI instead? Just ask, and it'll route
-the one-shots into a sampler.
 
 ---
 
@@ -234,6 +251,11 @@ agents are written to work *with* these, not pretend they don't exist:
   (a companion change to reaper-mcp), not one note at a time.
 - **Mixing has "ears"** — the analyze tools render the master and measure it (and can call an
   AI listener), which is how the mix engineer reasons about a result it can't literally hear.
+- **It has memory** — two JSON files persist context across runs: a machine-global **VST catalog**
+  (`~/.reaper-composer/vst-catalog.json`, researched incrementally) so plugin picks improve over
+  time, and a per-project **song state** (`<project>/.reaper-composer/song-state.json`, beside the
+  `.rpp`) holding the plan, track map, and per-section progress so an in-progress song can be
+  resumed after `/clear` or the next day. Both are local user data, never committed.
 
 ---
 
@@ -247,12 +269,15 @@ commands/
   compose.md             /reaper-composer:compose — genre + style → song
   discover.md            /reaper-composer:discover — brainstorm a vibe → song
   mix.md                 /reaper-composer:mix — opt-in mix/balance pass
+  catalog-vsts.md        /reaper-composer:catalog-vsts — eager full scan of installed plugins
 agents/                  arranger · vst-setup · composer · mix-engineer
 skills/
   vision-discovery/      conversational discovery for fuzzy / hybrid ideas
   music-theory/          MIDI notes, scales, chords, timing/swing, drum map
   mixing/                reading the analyze tools → mix fixes
   recommended-vsts/      free VSTs by role (drums, bass, synths, guitar, keys, FX)
+  vst-catalog/           persistent catalog of your installed VSTs → plugin selection
+  song-state/            checkpoint a song to disk → resume across sessions
   local-assets/          use a folder of your own samples / MIDI
   reaper-mcp-reference/  the reaper-mcp tool contract + conventions
   genre-template/        scaffold for new genres

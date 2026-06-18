@@ -15,6 +15,8 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
 - `commands/discover.md` — `/reaper-composer:discover`, the brainstorm entry point: runs the
   `vision-discovery` skill, then offers to continue into the same build pipeline
 - `commands/mix.md` — `/reaper-composer:mix`, an opt-in mix/balance pass (invokes `mix-engineer`)
+- `commands/catalog-vsts.md` — `/reaper-composer:catalog-vsts`, eager full scan that researches
+  every installed plugin into the persistent `vst-catalog` (compose fills it lazily on its own)
 - `agents/{arranger,vst-setup,composer}.md` — the three-stage build pipeline;
   `agents/mix-engineer.md` — opt-in mixing/balance (no compositional changes)
 - `skills/vision-discovery/` — conversational discovery the arranger runs FIRST when the
@@ -28,6 +30,12 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
   audio/`.mid` on the timeline via `reaper_insert_media` (one-shots dropped directly by default;
   sampler routing only if the user asks for MIDI-triggered drums)
 - `skills/reaper-mcp-reference/` — the reaper-mcp tool contract (load before any DAW call)
+- `skills/vst-catalog/` — builds + reads a persistent, per-plugin catalog of the user's INSTALLED
+  VSTs (what each is, roles/genres it suits, starting sound); `vst-setup` selects from it instead
+  of blind name-matching, researching new plugins incrementally (model-knowledge first)
+- `skills/song-state/` — persists per-project song state (brief, plan, track map, per-section
+  built/pending) so a `/clear` or next-day session can resume; checkpointed by the build agents,
+  read at the start of compose/discover to offer Resume
 - `skills/genre-{edm,house,trap,metal,rock-and-roll}/` — per-genre musicological context
 - `skills/genre-template/` — copy to add a new genre (not a real genre; agents ignore it)
 - `README.md` — user-facing docs (install, usage, architecture)
@@ -38,6 +46,24 @@ first — nothing works until it returns Reaper's version.
 
 **Adding a genre = adding a `skills/genre-<name>/SKILL.md` only.** Agents are genre-agnostic;
 never branch genre logic into agent files (see principle below).
+
+## Persistence / context tracking
+
+Two on-disk JSON files give the plugin memory across runs (the persistence *logic* lives in
+skills, keeping agents thin — consistent with the design principle below):
+
+- **VST catalog** — `~/.reaper-composer/vst-catalog.json` (machine-global; Windows
+  `C:\Users\<user>\.reaper-composer\`). One researched entry per installed plugin, keyed by
+  exact FX name. Built **incrementally**: each scan diffs `reaper_list_installed_fx` against the
+  catalog and only researches new plugins (model-knowledge first, web only for unknowns).
+  `vst-setup` selects from it; `/reaper-composer:catalog-vsts` does a full eager scan.
+- **Song state** — `<project-dir>/.reaper-composer/song-state.json` (per-project, beside the
+  `.rpp`). Holds the brief, approved plan, track map, and per-section `built`/`pending` status.
+  The arranger/vst-setup/composer **checkpoint** it; compose/discover read it at startup to offer
+  **Resume**, reconciling against live Reaper (`list_tracks`/`list_items`) before continuing.
+  Unsaved project → prompt to save (temp fallback under `~/.reaper-composer/unsaved-projects/`).
+
+Both are **runtime user-machine data — never commit them to the plugin repo.**
 
 ## What This Plugin Does
 

@@ -54,6 +54,14 @@ to drag onto which pads — the MCP can't load files into a sampler's pads autom
 file-path parameter) — and trigger with `add_midi_notes`. Don't default to this; it adds a
 manual mapping step the timeline approach avoids.
 
+> **Record the pad→drum assignment you tell them to set up.** Because *you* decide which one-shot
+> goes on which pad, you know the exact trigger note (Sitala pads run chromatically from MIDI 36 —
+> pad 1 = 36, pad 2 = 37, …; that fixed layout lives in `drum-maps/Sitala.json`). Which *drum* is
+> on each pad is **song-specific**, so put that assignment in the **track map** (and song-state) as
+> `verified: true` — e.g. `{"36":"kick","37":"snare","38":"clap","42":"closed hat","46":"open
+> hat"}` — and hand it to the composer, rather than overwriting the shared kit file. This is the
+> one case where the drum mapping is exactly known by construction — don't waste it.
+
 ### One-off audio (risers, impacts, vocal chops, FX)
 Drop directly as audio items with `reaper_insert_media` at the exact moment they hit (e.g. a
 riser across the last bars of a build, an impact on a drop's downbeat).

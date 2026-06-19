@@ -1,7 +1,7 @@
 {
   "name": "reaper-composer",
   "description": "One command turns a plain-English request into a finished Reaper project. /reaper-composer:compose orchestrates an arranger, a VST-setup agent, and a composer that write MIDI, FX, and automation through the reaper-mcp server — auto-brainstorming fuzzy ideas and offering a mix at the end. Skills load themselves; remembers your installed VSTs and resumes in-progress songs across sessions.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": {
     "name": "t-rzeznik"
   }

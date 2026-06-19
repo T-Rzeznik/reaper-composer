@@ -23,6 +23,12 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
   request is vague/genre-less/hybrid; produces a creative brief + genre routing
 - `skills/music-theory/` — lookup tables (MIDI notes, scales, chords, bar→seconds + swing math,
   GM drum map); the composer uses these instead of computing notes/timing inline
+- `skills/songwriting/` — genre-agnostic composition *craft* (voice leading, motif development,
+  tension/release arcs, counter-melody, the no-identical-repeat rule); music-theory spells the
+  notes, this decides which ones — the composer loads it alongside music-theory
+- `skills/groove/` — humanization/feel for written MIDI (velocity shaping, micro-timing jitter,
+  push/pull, swing application, per-instrument templates); the last shaping pass before the
+  `add_midi_notes` batch so parts don't sound on-grid/robotic
 - `skills/mixing/` — how to read the analyze tools and translate metrics into mix fixes
 - `skills/recommended-vsts/` — free VSTs by role; `vst-setup` suggests these (with an
   install→rescan loop) when no suitable instrument is installed, instead of forcing a synth
@@ -33,6 +39,10 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
 - `skills/vst-catalog/` — builds + reads a persistent, per-plugin catalog of the user's INSTALLED
   VSTs (what each is, roles/genres it suits, starting sound); `vst-setup` selects from it instead
   of blind name-matching, researching new plugins incrementally (model-knowledge first)
+- `skills/drum-maps/` — researches a drum VST's MIDI note→drum layout (model knowledge first, then
+  a web lookup) and saves it as a per-kit, hand-editable file under `~/.reaper-composer/drum-maps/`;
+  fixes the #1 drum bug (GM notes that miss where a kit's samples live). vst-setup resolves the map
+  here and passes it to the composer; includes an optional play-probe verification step
 - `skills/song-state/` — persists per-project song state (brief, plan, track map, per-section
   built/pending) so a `/clear` or next-day session can resume; checkpointed by the build agents,
   read at the start of compose/discover to offer Resume
@@ -49,21 +59,26 @@ never branch genre logic into agent files (see principle below).
 
 ## Persistence / context tracking
 
-Two on-disk JSON files give the plugin memory across runs (the persistence *logic* lives in
+On-disk JSON files give the plugin memory across runs (the persistence *logic* lives in
 skills, keeping agents thin — consistent with the design principle below):
 
 - **VST catalog** — `~/.reaper-composer/vst-catalog.json` (machine-global; Windows
   `C:\Users\<user>\.reaper-composer\`). One researched entry per installed plugin, keyed by
   exact FX name. Built **incrementally**: each scan diffs `reaper_list_installed_fx` against the
   catalog and only researches new plugins (model-knowledge first, web only for unknowns).
-  `vst-setup` selects from it; `/reaper-composer:catalog-vsts` does a full eager scan.
+  `vst-setup` selects from it; `/reaper-composer:catalog-vsts` does a full eager scan. For drum
+  instruments, the catalog entry holds a `drum_map` pointer to a per-kit map file (next bullet).
+- **Drum maps** — `~/.reaper-composer/drum-maps/<slug>.json` (machine-global, one per drum VST).
+  The kit's MIDI note→drum layout, researched once (model knowledge → web), reused forever, and
+  hand-editable by the user. Owned by the `drum-maps` skill; the composer writes drum notes at
+  these numbers instead of guessing General MIDI.
 - **Song state** — `<project-dir>/.reaper-composer/song-state.json` (per-project, beside the
   `.rpp`). Holds the brief, approved plan, track map, and per-section `built`/`pending` status.
   The arranger/vst-setup/composer **checkpoint** it; compose/discover read it at startup to offer
   **Resume**, reconciling against live Reaper (`list_tracks`/`list_items`) before continuing.
   Unsaved project → prompt to save (temp fallback under `~/.reaper-composer/unsaved-projects/`).
 
-Both are **runtime user-machine data — never commit them to the plugin repo.**
+These are all **runtime user-machine data — never commit them to the plugin repo.**
 
 ## What This Plugin Does
 
@@ -133,7 +148,8 @@ fuzzy requests). `/reaper-composer:mix` runs the mix stage separately.
 2. **VST Selection & Setup Agent** — picks instruments/effects for the genre and loads them
    into Reaper's track structure via MCP.
 3. **Composition Agent** — writes MIDI (`insert_midi_item` → batch `add_midi_notes`, in
-   seconds; computes notes/timing from the `music-theory` skill's tables), automation
+   seconds; computes notes/timing from the `music-theory` skill's tables, then shapes them with
+   the `songwriting` craft skill and humanizes feel with the `groove` skill), automation
    envelopes, and FX control via MCP. Drives plugins through their **named/indexed parameters**
    (`list_fx_params` → `set_fx_param`) — there is no UI vision; see constraints below. Streams
    progress updates to the user.

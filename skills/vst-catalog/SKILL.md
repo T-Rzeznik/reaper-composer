@@ -50,6 +50,26 @@ you can load directly.
       "source": "model",
       "researched_at": "2026-06-18T13:20:00Z"
     },
+    "VST3i: Sitala (Decomposer)": {
+      "name": "Sitala",
+      "exact_fx_name": "VST3i: Sitala (Decomposer)",
+      "vendor": "Decomposer",
+      "kind": "instrument",
+      "subtype": "drum sampler",
+      "roles": ["drums", "kick", "snare", "clap", "hihat", "perc", "808"],
+      "genres": ["edm", "house", "trap", "techno"],
+      "strengths": "16-pad one-shot drum sampler. Free. You load your own samples onto pads.",
+      "starting_sound": "Load one-shots per pad; tune/decay per pad to taste.",
+      "drum_map": {
+        "mapping": "fixed",
+        "map_file": "drum-maps/Sitala.json",
+        "verified": false
+      },
+      "free": true,
+      "installed": true,
+      "source": "model",
+      "researched_at": "2026-06-18T13:20:00Z"
+    },
     "VST3: Pro-Q 3 (FabFilter)": {
       "name": "Pro-Q 3",
       "exact_fx_name": "VST3: Pro-Q 3 (FabFilter)",
@@ -76,6 +96,15 @@ Field notes:
 - `installed` — `false` for plugins that were once cataloged but no longer appear in
   `reaper_list_installed_fx`. Keep the entry (don't delete) so a reinstall is instant.
 - `source` — `model` (filled from your own knowledge) or `web` (researched via WebSearch).
+- `drum_map` — **only for drum instruments (samplers/kits); this fixes the #1 drum bug: the
+  composer writing GM note numbers that don't match where the kit's samples actually live.** It's
+  a small **pointer**, not the map itself — the full note layout lives in a dedicated, hand-editable
+  file owned by the `drum-maps` skill:
+  - `mapping` — `gm` (matches `music-theory` §5 — many acoustic-kit samplers like MT Power Drum
+    Kit and SSD5 Free are GM-ish), `fixed` (a known pad layout, e.g. Sitala's chromatic-from-36),
+    `custom` (kit-specific layout from the docs), or `unknown` (couldn't determine).
+  - `map_file` — relative path to the kit's map file, `drum-maps/<slug>.json` (see `drum-maps`).
+  - `verified` — mirrors the file's flag: `false` from model/web knowledge, `true` once confirmed.
 
 ## Read-first protocol
 
@@ -112,6 +141,14 @@ For each plugin in `to_research`:
 For every entry, fill `roles`, `genres`, `strengths`, and a short `starting_sound` hint (which
 params to reach for — you'll still confirm real param names later with `reaper_list_fx_params`).
 
+**For any drum instrument (sampler/kit), also resolve its `drum_map`** — this is what stops the
+composer from writing GM notes that miss the kit's actual samples. **Delegate to the `drum-maps`
+skill**: run its resolve routine (read the kit's `drum-maps/<slug>.json` if it exists; else
+research it — model knowledge first, then a focused web lookup of the kit's note mapping — and
+write the file). Then store the small pointer here: `drum_map: { mapping, map_file, verified }`.
+If the web lookup is inconclusive, the file is written `mapping: "unknown"` so the composer flags
+it rather than guessing — don't assert kick/snare notes you're unsure of.
+
 ## Cost control — lazy by default
 
 During a normal `vst-setup` run, **do not research the whole library.** Research only the
@@ -139,7 +176,10 @@ For each role in the approved plan:
    and the song's genre.
 2. Rank by genre fit, then `strengths`. Pick the best **installed** match and load it by its
    `exact_fx_name`.
-3. Use its `starting_sound` as the opening point for parameter setup.
+3. Use its `starting_sound` as the opening point for parameter setup. **For a drum instrument,
+   resolve its map via `drum-maps` (read the pointed-to `map_file`) and pass the actual note layout
+   into the track map** so the composer writes notes where the samples really live (a
+   `mapping: "unknown"` map signals vst-setup to flag it / verify / prefer a known-mapped sampler).
 4. **Only if the catalog has no suitable installed match**, fall back to the `recommended-vsts`
    skill (suggest a free plugin + the install → rescan loop). After a rescan + reinstall, the
    new plugin gets cataloged on the next diff.

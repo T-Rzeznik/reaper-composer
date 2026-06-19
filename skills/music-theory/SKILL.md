@@ -72,7 +72,28 @@ Add the root's MIDI number to each interval. **Example — F minor (root F3 = 53
 Voice chords by dropping/raising tones an octave (±12) to keep a smooth range; for pads,
 spread across ~2 octaves; for stabs, keep tight.
 
-## 5. General MIDI drum map (the notes our genre skills reference)
+## 5. Drum note mapping — use the loaded instrument's map, NOT this table by default
+
+**This is the #1 source of "the drums play the wrong/no sample" bugs.** Drum samplers
+(Superior Drummer, EZdrummer, GetGood, Battery, Kontakt kits, Sitala…) mostly **do not** follow
+General MIDI — they put the kick/snare/hat on whatever notes the developer chose. So:
+
+> **Authoritative source = the loaded drum instrument's drum map** — researched once and saved as
+> a per-kit file by the `drum-maps` skill, resolved by `vst-catalog`, and handed to you in the
+> **track map** for the drum track. Write drum notes at *those* MIDI numbers. The GM table below is
+> **only the fallback** for a kit whose map is GM (`mapping: "gm"`) or genuinely unknown.
+
+**The octave-label trap:** VSTs disagree on octave *names* — the same kick may be labeled "C1"
+in one plugin and "C2" in another — but the **MIDI note number is unambiguous**. Always reason in
+MIDI numbers (kick = 36, not "C1"), and record/pass numbers, never labels. (Per §2, MIDI 36 = C2
+in this skill's C4=60 convention; some DAWs call it C1. Ignore the label; trust the number.)
+
+If the track map's `drum_map` says `mapping: "unknown"`, don't silently use GM — flag it to the
+user (or, better, use a kit whose map is known). The cheapest reliable map is a sampler **we**
+load (e.g. Sitala via `local-assets`): we choose which one-shot goes on which pad, so we know the
+exact trigger note by construction — record it as `verified: true`.
+
+### General MIDI drum map (the FALLBACK — and what the genre skills reference symbolically)
 
 | Note | Drum | Note | Drum |
 |---|---|---|---|
@@ -84,9 +105,9 @@ spread across ~2 octaves; for stabs, keep tight.
 | 41 43 45 47 48 50 | Toms (low→high) | 54 | Tambourine |
 | 56 | Cowbell | 53 | Ride bell |
 
-**Caveat:** this is the GM standard. Many drum VSTs (Superior Drummer, GetGood, Battery,
-samplers) remap pads. When in doubt, the genre skill says "verify against the loaded drum
-instrument" — trust the loaded instrument's mapping over this table if they conflict.
+When a genre skill says "kick ~ C1 (36)", treat the **role** (kick) as the instruction and look
+up the *actual* note in the loaded kit's `drum_map`; fall back to this number only if the map is
+GM/unknown.
 
 ## Using this with the batch writer
 

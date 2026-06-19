@@ -87,9 +87,12 @@ to run a piece on its own:
 | `agents/mix-engineer.md` | Analyzes the master and balances levels/EQ/pan/sends (opt-in) |
 | `skills/vision-discovery/` | Conversational discovery for fuzzy / genre-less / hybrid ideas |
 | `skills/music-theory/` | Lookup tables: MIDI notes, scales, chords, timing/swing math, drum map |
+| `skills/songwriting/` | Composition craft: voice leading, motif development, tension/release, counter-melody |
+| `skills/groove/` | Humanization: velocity shaping, micro-timing, swing/feel so MIDI isn't robotic |
 | `skills/mixing/` | How to read the analyze tools and translate metrics into mix fixes |
 | `skills/recommended-vsts/` | Catalog of free VSTs by role; suggested when you lack one |
 | `skills/vst-catalog/` | Persistent, researched catalog of *your* installed VSTs — drives plugin selection |
+| `skills/drum-maps/` | Researches a drum VST's MIDI note layout (online if needed), saves a per-kit map file, verifies it |
 | `skills/song-state/` | Checkpoints each song to disk so a later session can resume it |
 | `skills/local-assets/` | Use your own folder of samples/MIDI — catalog, place, and trigger them |
 | `skills/reaper-mcp-reference/` | The reaper-mcp tool contract + hard-won conventions |
@@ -251,11 +254,14 @@ agents are written to work *with* these, not pretend they don't exist:
   (a companion change to reaper-mcp), not one note at a time.
 - **Mixing has "ears"** — the analyze tools render the master and measure it (and can call an
   AI listener), which is how the mix engineer reasons about a result it can't literally hear.
-- **It has memory** — two JSON files persist context across runs: a machine-global **VST catalog**
+- **It has memory** — JSON files persist context across runs: a machine-global **VST catalog**
   (`~/.reaper-composer/vst-catalog.json`, researched incrementally) so plugin picks improve over
-  time, and a per-project **song state** (`<project>/.reaper-composer/song-state.json`, beside the
-  `.rpp`) holding the plan, track map, and per-section progress so an in-progress song can be
-  resumed after `/clear` or the next day. Both are local user data, never committed.
+  time, per-kit **drum maps** (`~/.reaper-composer/drum-maps/<kit>.json`) so the right samples
+  fire instead of guessed General-MIDI notes (researched online once, then reused and
+  hand-editable), and a per-project **song state**
+  (`<project>/.reaper-composer/song-state.json`, beside the `.rpp`) holding the plan, track map,
+  and per-section progress so an in-progress song can be resumed after `/clear` or the next day.
+  All are local user data, never committed.
 
 ---
 
@@ -274,9 +280,12 @@ agents/                  arranger · vst-setup · composer · mix-engineer
 skills/
   vision-discovery/      conversational discovery for fuzzy / hybrid ideas
   music-theory/          MIDI notes, scales, chords, timing/swing, drum map
+  songwriting/           composition craft: voice leading, motif development, tension, counter-melody
+  groove/                humanization: velocity shaping, micro-timing, swing/feel
   mixing/                reading the analyze tools → mix fixes
   recommended-vsts/      free VSTs by role (drums, bass, synths, guitar, keys, FX)
   vst-catalog/           persistent catalog of your installed VSTs → plugin selection
+  drum-maps/             per-kit drum note maps (researched online, saved & reused)
   song-state/            checkpoint a song to disk → resume across sessions
   local-assets/          use a folder of your own samples / MIDI
   reaper-mcp-reference/  the reaper-mcp tool contract + conventions

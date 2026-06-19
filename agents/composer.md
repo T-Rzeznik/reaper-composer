@@ -9,9 +9,11 @@ upstream agents.
 
 Load these skills before composing: `reaper-mcp-reference` (tool contract + conventions),
 `music-theory` (exact MIDI numbers, scale/chord note sets, bar→seconds and swing math — use
-its tables, don't compute notes/timing from scratch), the relevant genre skill (drum
-patterns, chord/melody conventions, production moves), and `song-state` (checkpoint progress
-per section so the song can be resumed later). **If the user pointed at a folder of their own
+its tables, don't compute notes/timing from scratch), `songwriting` (the craft that makes notes
+*good*: voice leading, motif development, tension arcs, counter-melody, and the no-identical-
+repeat rule), `groove` (humanization — velocity shaping, micro-timing, swing/feel so the MIDI
+isn't robotic), the relevant genre skill (drum patterns, chord/melody conventions, production
+moves), and `song-state` (checkpoint progress per section so the song can be resumed later). **If the user pointed at a folder of their own
 samples/MIDI, also load `local-assets`** and weave those files into the sections (place
 loops/one-shots/MIDI on the timeline with `reaper_insert_media` by default; only trigger
 one-shots from a sampler via MIDI if the user asked for that).
@@ -32,13 +34,25 @@ Work through the plan's sections in order. For each section, **stream a short pr
 to the user** ("▸ Writing the drop: kick + sub + lead, bars 33–48…") before doing it. Per track:
 - `reaper_insert_midi_item` spanning the section's seconds (one item per section per track —
   keeps redo/editing surgical).
-- Compute the section's notes from the `music-theory` tables, assemble them as a list of
-  `{pitch, start_sec, length_sec, velocity, channel}`, and write the whole part in ONE
+- Compute the section's notes from the `music-theory` tables, then **shape them before writing**:
+  apply `songwriting` (voice-lead the chords instead of stacking root-position triads; develop
+  the motif across the phrases instead of pasting it; build a tension arc; add answering/counter
+  layers) and `groove` (velocity accent curves, micro-timing jitter, swing/push-pull per the
+  per-instrument templates). Assemble the shaped notes as a list of
+  `{pitch, start_sec, length_sec, velocity, channel}` and write the whole part in ONE
   `reaper_add_midi_notes` call. Only fall back to single `reaper_add_midi_note` for a one-off
   fix. (Batch writing is much faster and is a single undo step.)
 - Follow the genre skill's conventions: drum patterns, chord voicings, bassline relationship
   to the kick, melodic phrasing, octave choices.
-- Velocities matter — vary them for groove; don't write everything at 96.
+- **For drum parts, write notes at the MIDI numbers in the track map's `drum_map`, NOT the GM
+  table** (see `music-theory` §5 — this is the #1 drum bug: most kits don't follow GM). The genre
+  skill names the *role* ("kick on every beat"); look the role up in the kit's `drum_map` to get
+  the actual trigger note. Reason in MIDI numbers, never octave labels. If the `drum_map` is
+  `unknown`/unverified, don't silently use GM — tell the user the drum mapping is unconfirmed and
+  offer to verify (e.g. audition the kit, or switch to a known-mapped sampler) before relying on it.
+- **Never paste a section identically** (see `songwriting` rule 6): when a section recurs, change
+  at least one thing — a layer added/dropped, a fill in the last bar, a re-voiced chord, a melodic
+  variation. Keep the kick and sub tight; let everything else breathe (`groove`).
 - **When the section is done, checkpoint it** via `song-state`: flip that section to
   `status: "built"`, update `last_section_completed`, `phase: "composing"`. This is what lets a
   later session resume mid-song instead of restarting.

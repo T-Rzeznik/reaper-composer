@@ -15,6 +15,8 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
 - `commands/discover.md` — `/reaper-composer:discover`, the brainstorm entry point: runs the
   `vision-discovery` skill, then offers to continue into the same build pipeline
 - `commands/mix.md` — `/reaper-composer:mix`, an opt-in mix/balance pass (invokes `mix-engineer`)
+- `commands/generate-stems.md` — `/reaper-composer:generate-stems`, opt-in standalone local AI
+  stem generation (invokes the `stem-generation` skill); not part of the compose pipeline
 - `commands/catalog-vsts.md` — `/reaper-composer:catalog-vsts`, eager full scan that researches
   every installed plugin into the persistent `vst-catalog` (compose fills it lazily on its own)
 - `agents/{arranger,vst-setup,composer}.md` — the three-stage build pipeline;
@@ -35,6 +37,12 @@ there is no build/test/lint step. The deliverable is plugin assets, and they exi
 - `skills/local-assets/` — use a user-pointed folder of samples/MIDI: scan + catalog, place
   audio/`.mid` on the timeline via `reaper_insert_media` (one-shots dropped directly by default;
   sampler routing only if the user asks for MIDI-triggered drums)
+- `skills/stem-generation/` — *generate* new audio stems (vs `local-assets`, which uses the
+  user's own files) from a text prompt with a local, $0/clip model (Meta MusicGen-small via HF
+  `transformers`, `scripts/generate_stem.py`); writes a WAV, then place + sync it on the timeline
+  with `reaper_insert_media`. Standalone, opt-in via `/reaper-composer:generate-stems` only (not
+  in the compose pipeline). Best for textures/pads/beds, not precise melodies — the MIDI composer
+  stays the default
 - `skills/reaper-mcp-reference/` — the reaper-mcp tool contract (load before any DAW call)
 - `skills/vst-catalog/` — builds + reads a persistent, per-plugin catalog of the user's INSTALLED
   VSTs (what each is, roles/genres it suits, starting sound); `vst-setup` selects from it instead
@@ -77,6 +85,8 @@ skills, keeping agents thin — consistent with the design principle below):
   The arranger/vst-setup/composer **checkpoint** it; compose/discover read it at startup to offer
   **Resume**, reconciling against live Reaper (`list_tracks`/`list_items`) before continuing.
   Unsaved project → prompt to save (temp fallback under `~/.reaper-composer/unsaved-projects/`).
+- **Generated stems** — `~/.reaper-composer/stems/<project-name>/<role>-<section>.wav` (the WAVs
+  produced by `stem-generation`). Material to place on the timeline, regenerable at any time.
 
 These are all **runtime user-machine data — never commit them to the plugin repo.**
 

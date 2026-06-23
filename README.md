@@ -75,6 +75,7 @@ to run a piece on its own:
 |---|---|
 | `/reaper-composer:discover` (`commands/discover.md`) | Brainstorm a vibe into a brief *without* committing to a build yet. |
 | `/reaper-composer:mix` (`commands/mix.md`) | Re-run the mix/balance pass on demand. |
+| `/reaper-composer:generate-stems` (`commands/generate-stems.md`) | Generate a new AI audio layer (pad/texture/loop) with a local free model and drop it on the timeline. |
 | `/reaper-composer:catalog-vsts` (`commands/catalog-vsts.md`) | Eagerly research every installed plugin up front. |
 
 **Under the hood** — agents and skills the plugin runs *for* you (you never call these directly):
@@ -95,6 +96,7 @@ to run a piece on its own:
 | `skills/drum-maps/` | Researches a drum VST's MIDI note layout (online if needed), saves a per-kit map file, verifies it |
 | `skills/song-state/` | Checkpoints each song to disk so a later session can resume it |
 | `skills/local-assets/` | Use your own folder of samples/MIDI — catalog, place, and trigger them |
+| `skills/stem-generation/` | Generate new audio stems from a text prompt with a local free model (MusicGen-small), then place + sync them |
 | `skills/reaper-mcp-reference/` | The reaper-mcp tool contract + hard-won conventions |
 | `skills/genre-*/` | Per-genre musicology (EDM, house, trap, metal, rock & roll) |
 | `skills/genre-template/` | Copy-to-create scaffold for new genres |
@@ -275,6 +277,7 @@ commands/
   compose.md             /reaper-composer:compose — genre + style → song
   discover.md            /reaper-composer:discover — brainstorm a vibe → song
   mix.md                 /reaper-composer:mix — opt-in mix/balance pass
+  generate-stems.md      /reaper-composer:generate-stems — local AI stem generation → timeline
   catalog-vsts.md        /reaper-composer:catalog-vsts — eager full scan of installed plugins
 agents/                  arranger · vst-setup · composer · mix-engineer
 skills/
@@ -288,6 +291,7 @@ skills/
   drum-maps/             per-kit drum note maps (researched online, saved & reused)
   song-state/            checkpoint a song to disk → resume across sessions
   local-assets/          use a folder of your own samples / MIDI
+  stem-generation/       generate new audio stems with a local free model → timeline
   reaper-mcp-reference/  the reaper-mcp tool contract + conventions
   genre-template/        scaffold for new genres
   genre-edm · genre-house · genre-trap · genre-metal · genre-rock-and-roll
